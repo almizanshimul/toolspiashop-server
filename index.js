@@ -278,7 +278,6 @@ async function run() {
       res.send(result);
     })
 
-
     // review api added 
     app.get("/reviews", async (req, res) => {
       const reviews = await reviewsCollection.find({}).toArray();
