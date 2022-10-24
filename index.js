@@ -44,6 +44,23 @@ async function run() {
     await client.connect();
     // console.log("Database Connected");
     const toolsCollection = client.db("ToolsPiaShop").collection("tools");
+    const usersCollection = client.db("ToolsPiaShop").collection("users");
+
+
+
+        // verify that user an admin middleware
+        const verifyAdmin = async (req, res, next) => {
+          const requesterEmail = req.decoded.email;
+          const requesterAccount = await usersCollection.findOne({
+            email: requesterEmail,
+          });
+          if (requesterAccount.role === "admin") {
+            next();
+          } else {
+            res.status(403).send({ message: "Forbidden Access" });
+          }
+        };
+
 
     // get all tools 
     app.get("/tools", async (req, res) => {
@@ -66,20 +83,77 @@ async function run() {
       res.send(tool);
     });
 
-    
+
     app.post("/tools", verifyJWT, async (req, res) => {
       const tool = req.body;
       const result = await toolsCollection.insertOne(tool);
       res.send(result);
     });
-    
-    app.delete('/tools/:id', async(req, res) => {
+
+    app.delete('/tools/:id', async (req, res) => {
       const id = req.params.id;
-      const result = await toolsCollection.deleteOne({_id: ObjectId(id)});
+      const result = await toolsCollection.deleteOne({ _id: ObjectId(id) });
       res.send(result);
     })
 
-    
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      const token = jwt.sign(
+        { email: email },
+        process.env.JWT_TOKEN,
+        { expiresIn: "1d" }
+      );
+      res.send({ result, token });
+    });
+
+    app.get("/user", verifyJWT, verifyAdmin, async (req, res) => {
+      const users = await usersCollection.find({}).toArray();
+      res.send(users);
+    });
+
+    app.get("/user/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const requesterEmail = req.decoded.email;
+      if (email === requesterEmail) {
+        const user = await usersCollection.findOne({ email: email });
+        res.send(user);
+      } else {
+        res.status(403).send({ message: "Forbidden" });
+      }
+    });
+
+    app.put("/updateUser/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const requesterEmail = req.decoded.email;
+      if (email === requesterEmail) {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: req.body,
+        };
+        const options = { upsert: true };
+        const result = await usersCollection.updateOne(
+          filter,
+          updateDoc,
+          options
+        );
+        res.send(result);
+      } else {
+        res.status(403).send({ message: "Forbidden" });
+      }
+    });
+
+
   } finally {
   }
 }
