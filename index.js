@@ -154,6 +154,30 @@ async function run() {
     });
 
 
+    app.put("/makeAdmin/:email", verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: req.body,
+      };
+      const options = { upsert: true };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    app.get("/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.findOne({ email: email });
+      const isAdmin = result?.role === "admin";
+      res.send({ isAdmin });
+    });
+    
+
+    
   } finally {
   }
 }
