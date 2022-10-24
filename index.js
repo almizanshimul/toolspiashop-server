@@ -20,6 +20,25 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 
+// Verify JWT 
+const verifyJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.status(401).send({ message: "Unauthorized Access" });
+  } else {
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.JWT_TOKEN, (error, decoded) => {
+      if (error) {
+        res.status(403).send({ message: "Forbidden Access" });
+      } else {
+        req.decoded = decoded;
+        next();
+      }
+    });
+  }
+};
+
+
 async function run() {
   try {
     await client.connect();
@@ -46,6 +65,21 @@ async function run() {
       const tool = await toolsCollection.findOne({ _id: ObjectId(id) });
       res.send(tool);
     });
+
+    
+    app.post("/tools", verifyJWT, async (req, res) => {
+      const tool = req.body;
+      const result = await toolsCollection.insertOne(tool);
+      res.send(result);
+    });
+    
+    app.delete('/tools/:id', async(req, res) => {
+      const id = req.params.id;
+      const result = await toolsCollection.deleteOne({_id: ObjectId(id)});
+      res.send(result);
+    })
+
+    
   } finally {
   }
 }
