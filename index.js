@@ -208,6 +208,24 @@ async function run() {
       res.send(result);
     });
 
+    // delete order api 
+    
+    app.delete("/order/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const toolId = req.query.toolId;
+      const newQuantity = req.query.newQuantity;
+      const filter = {_id: ObjectId(toolId)};
+      const updateDoc = {
+        $set: {
+          availableQuantity: parseInt(newQuantity)
+        }
+      }
+      const updated = await toolsCollection.updateOne(filter, updateDoc);
+      const result = await ordersCollection.deleteOne({ _id: ObjectId(id) });
+      res.send(result);
+    });
+
+
 // review api added 
     app.get("/reviews", async (req, res) => {
       const reviews = await reviewsCollection.find({}).toArray();
