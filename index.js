@@ -225,6 +225,46 @@ async function run() {
       res.send(result);
     });
 
+    // user order filter 
+    
+    app.get("/order/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const decodeEmail = req.decoded.email;
+      if (email === decodeEmail) {
+        const orders = await ordersCollection.find({ email: email }).toArray();
+        res.send(orders);
+      } else {
+        res.status(403).send({ message: "Forbidden Access" });
+      }
+    });
+
+    app.patch('/order/:id', verifyJWT, async(req, res) =>{
+      const id  = req.params.id;
+      const payment = req.body;
+      const filter = {_id: ObjectId(id)};
+      const updatedDoc = {
+        $set: {
+          isPaid: true,
+          transactionId: payment.transactionId
+        }
+      }
+      const result = await paymentCollection.insertOne(payment);
+      const updatedBooking = await ordersCollection.updateOne(filter, updatedDoc);
+      res.send(updatedBooking);
+      // console.log(payment.availableQuantity - payment.quantity)
+    })
+
+    app.put('/order/:id', verifyJWT, async(req, res) => {
+      const id = req.params.id;
+      const filter = {_id: ObjectId(id)};
+      const updateDoc = {
+        $set: req.body
+      }
+      const options = {upsert: true};
+      const result = await ordersCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    })
+
 
 // review api added 
     app.get("/reviews", async (req, res) => {
