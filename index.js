@@ -11,7 +11,7 @@ app.use(cors());
 const port = process.env.PORT || 3500;
 
 app.get("/", (req, res) => {
-  res.send(`ToolsPiaShop server is running on port http://localhost:${port}`);
+  res.send(`ToolsPiaShop server is running`);
 });
 
 // mongo DB connect message 
