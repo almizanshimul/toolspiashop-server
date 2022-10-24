@@ -25,7 +25,10 @@ async function run() {
     await client.connect();
     // console.log("Database Connected");
     const toolsCollection = client.db("ToolsPiaShop").collection("tools");
-   
+    app.get("/tools", async (req, res) => {
+      const tools = await toolsCollection.find({}).toArray();
+      res.send(tools);
+    });
   } finally {
   }
 }
