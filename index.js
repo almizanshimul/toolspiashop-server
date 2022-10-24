@@ -47,22 +47,35 @@ async function run() {
     const usersCollection = client.db("ToolsPiaShop").collection("users");
     const ordersCollection = client.db("ToolsPiaShop").collection("orders");
     const reviewsCollection = client.db("ToolsPiaShop").collection("reviews");
+    const paymentCollection = client.db("ToolsPiaShop").collection("payments");
 
+    // verify that user an admin middleware
+    const verifyAdmin = async (req, res, next) => {
+      const requesterEmail = req.decoded.email;
+      const requesterAccount = await usersCollection.findOne({
+        email: requesterEmail,
+      });
+      if (requesterAccount.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "Forbidden Access" });
+      }
+    };
 
+    // payment routes added 
 
+    app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const tool = req.body;
+      const price = tool.price;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+      res.send({ clientSecret: paymentIntent.client_secret })
+    });
 
-        // verify that user an admin middleware
-        const verifyAdmin = async (req, res, next) => {
-          const requesterEmail = req.decoded.email;
-          const requesterAccount = await usersCollection.findOne({
-            email: requesterEmail,
-          });
-          if (requesterAccount.role === "admin") {
-            next();
-          } else {
-            res.status(403).send({ message: "Forbidden Access" });
-          }
-        };
 
 
     // get all tools 
@@ -178,11 +191,11 @@ async function run() {
       const isAdmin = result?.role === "admin";
       res.send({ isAdmin });
     });
-    
+
 
     // order api start 
-    
-    app.get('/order', verifyJWT, verifyAdmin, async(req, res) => {
+
+    app.get('/order', verifyJWT, verifyAdmin, async (req, res) => {
       const orders = await ordersCollection.find({}).toArray();
       res.send(orders);
     })
@@ -197,7 +210,7 @@ async function run() {
       const order = req.body;
       const toolId = req.query.toolId;
       const newQuantity = req.query.newQuantity;
-      const filter = {_id: ObjectId(toolId)};
+      const filter = { _id: ObjectId(toolId) };
       const updateDoc = {
         $set: {
           availableQuantity: newQuantity
@@ -209,12 +222,12 @@ async function run() {
     });
 
     // delete order api 
-    
+
     app.delete("/order/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const toolId = req.query.toolId;
       const newQuantity = req.query.newQuantity;
-      const filter = {_id: ObjectId(toolId)};
+      const filter = { _id: ObjectId(toolId) };
       const updateDoc = {
         $set: {
           availableQuantity: parseInt(newQuantity)
@@ -226,7 +239,7 @@ async function run() {
     });
 
     // user order filter 
-    
+
     app.get("/order/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const decodeEmail = req.decoded.email;
@@ -238,10 +251,10 @@ async function run() {
       }
     });
 
-    app.patch('/order/:id', verifyJWT, async(req, res) =>{
-      const id  = req.params.id;
+    app.patch('/order/:id', verifyJWT, async (req, res) => {
+      const id = req.params.id;
       const payment = req.body;
-      const filter = {_id: ObjectId(id)};
+      const filter = { _id: ObjectId(id) };
       const updatedDoc = {
         $set: {
           isPaid: true,
@@ -254,19 +267,19 @@ async function run() {
       // console.log(payment.availableQuantity - payment.quantity)
     })
 
-    app.put('/order/:id', verifyJWT, async(req, res) => {
+    app.put('/order/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: ObjectId(id)};
+      const filter = { _id: ObjectId(id) };
       const updateDoc = {
         $set: req.body
       }
-      const options = {upsert: true};
+      const options = { upsert: true };
       const result = await ordersCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     })
 
 
-// review api added 
+    // review api added 
     app.get("/reviews", async (req, res) => {
       const reviews = await reviewsCollection.find({}).toArray();
       res.send(reviews);
