@@ -45,6 +45,7 @@ async function run() {
     // console.log("Database Connected");
     const toolsCollection = client.db("ToolsPiaShop").collection("tools");
     const usersCollection = client.db("ToolsPiaShop").collection("users");
+    const ordersCollection = client.db("ToolsPiaShop").collection("orders");
     const reviewsCollection = client.db("ToolsPiaShop").collection("reviews");
 
 
@@ -178,6 +179,35 @@ async function run() {
       res.send({ isAdmin });
     });
     
+
+    // order api start 
+    
+    app.get('/order', verifyJWT, verifyAdmin, async(req, res) => {
+      const orders = await ordersCollection.find({}).toArray();
+      res.send(orders);
+    })
+
+    app.get("/orderById/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const order = await ordersCollection.findOne({ _id: ObjectId(id) });
+      res.send(order);
+    });
+
+    app.post("/order", verifyJWT, async (req, res) => {
+      const order = req.body;
+      const toolId = req.query.toolId;
+      const newQuantity = req.query.newQuantity;
+      const filter = {_id: ObjectId(toolId)};
+      const updateDoc = {
+        $set: {
+          availableQuantity: newQuantity
+        }
+      }
+      const updated = await toolsCollection.updateOne(filter, updateDoc);
+      const result = await ordersCollection.insertOne(order);
+      res.send(result);
+    });
+
 // review api added 
     app.get("/reviews", async (req, res) => {
       const reviews = await reviewsCollection.find({}).toArray();
