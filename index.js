@@ -45,6 +45,8 @@ async function run() {
     // console.log("Database Connected");
     const toolsCollection = client.db("ToolsPiaShop").collection("tools");
     const usersCollection = client.db("ToolsPiaShop").collection("users");
+    const reviewsCollection = client.db("ToolsPiaShop").collection("reviews");
+
 
 
 
@@ -176,8 +178,18 @@ async function run() {
       res.send({ isAdmin });
     });
     
+// review api added 
+    app.get("/reviews", async (req, res) => {
+      const reviews = await reviewsCollection.find({}).toArray();
+      res.send(reviews);
+    });
 
-    
+    app.post("/reviews", verifyJWT, async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
+      res.send(result);
+    });
+
   } finally {
   }
 }
