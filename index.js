@@ -25,9 +25,26 @@ async function run() {
     await client.connect();
     // console.log("Database Connected");
     const toolsCollection = client.db("ToolsPiaShop").collection("tools");
+
+    // get all tools 
     app.get("/tools", async (req, res) => {
       const tools = await toolsCollection.find({}).toArray();
       res.send(tools);
+    });
+
+    app.get("/toolsByLimit", async (req, res) => {
+      const limit = req.query.limit;
+      const tools = await toolsCollection
+        .find({})
+        .limit(parseInt(limit))
+        .toArray();
+      res.send(tools);
+    });
+
+    app.get("/tools/:id", async (req, res) => {
+      const id = req.params.id;
+      const tool = await toolsCollection.findOne({ _id: ObjectId(id) });
+      res.send(tool);
     });
   } finally {
   }
