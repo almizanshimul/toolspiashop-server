@@ -8,7 +8,7 @@
     "start-dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Ashikur Rahman Munna",
+  "author": "Al Mizan",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
